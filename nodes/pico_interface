@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+# pico_interface Node
+# RKS
+
+# This is responsible for reading encorder value and commanding PWM values to pico
+
+# Project imports
+
+# Python imports
+
+# 3rd-party imports
+import rospy
+
+class PicoInterface:
+    """
+    ROS Node responsible for interacting with Raspberry pico. The node sets up a 
+    serial connection to read encoder values from pico and pass them along to controller. 
+    Controller should provide a set of wheel velocities that interface converts into pwms. 
+    """
+    def __init__(self):
+        rospy.init_node("pico_interface")
+        self._RATE = 10 # in HZ
+        self._time_delta = 1./self._RATE
+        rospy.Timer(rospy.Duration(self._time_delta), self.serial_loop)
+        rospy.spin()
+
+    def serial_loop(self, event):
+        """
+        Serial loop
+
+        Args:
+            event: A rospy.Timer event
+        """
+        print("Hello World")
+
+#Activate 'pico_interface' Node
+def main():
+    """
+    Main execution loop for rc_interface
+    """
+    pico_interface = PicoInterface()
+
+# Main Execution loop
+if __name__ == "__main__":
+    try:
+        main()
+    #If something kills this node, have it die
+    except rospy.ROSInterruptException:
+        pass
