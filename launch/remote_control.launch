@@ -1,0 +1,3 @@
+<launch>
+    <node name="pico_interface" pkg="cytri_control_pkg" type="pico_interface"/>
+</launch>
