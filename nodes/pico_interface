@@ -20,7 +20,7 @@ class PicoInterface:
     """
     def __init__(self):
         rospy.init_node("pico_interface")
-        #self._uart3 = Serial("/dev/ttymxc2", 115200)
+        self._uart3 = Serial("/dev/ttymxc2", 115200)
         self._RATE = 10 # in HZ
         self._time_delta = 1./self._RATE
         rospy.Timer(rospy.Duration(self._time_delta), self.serial_loop)
@@ -33,10 +33,11 @@ class PicoInterface:
         Args:
             event: A rospy.Timer event
         """
-        #buf = self._uart3(128, 0.1)
-        #data = buf.decode('UTF-8')
-        #print(data)
-        rospy.logwarn("Hello World")
+        buf = self._uart3.read(64,0.01)
+        end1, end2, end3 = str(buf).split(',')
+        rospy.logwarn(str(buf))
+        rospy.logwarn(f"end1: {end1}, end2: {end2}, end3: {end3}")
+        #rospy.logwarn("Hello World")
 
 
 #Activate 'pico_interface' Node
