@@ -9,7 +9,7 @@
 # Python imports
 
 # 3rd-party imports
-from periphery import Serial
+from periphery import GPIO, PWM, Serial
 import rospy
 
 class PicoInterface:
@@ -20,10 +20,35 @@ class PicoInterface:
     """
     def __init__(self):
         rospy.init_node("pico_interface")
+        # Init serial port
         self._uart3 = Serial("/dev/ttymxc2", 115200)
+        # Init PWM waves
+        self._motorcmd1 = PWM(0,0)
+        self._motorcmd2 = PWM(1,0)
+        self._motorcmd3 = PWM(2,0)
+        self._pwm_freq = 1e3
+        self._motorcmd1.frequency = self._pwm_freq
+        self._motorcmd2.frequency = self._pwm_freq
+        self._motorcmd3.frequency = self._pwm_freq
+        self._motorcmd1.duty_cycle = 0.0
+        self._motorcmd2.duty_cycle = 0.0
+        self._motorcmd3.duty_cycle = 0.0
+        self._motorcmd1.enable()
+        self._motorcmd2.enable()
+        self._motorcmd3.enable()
+        # Init direction pins
+        self._motordir1 = GPIO("/dev/gpiochip4", 13, 'out')
+        self._motordir1.write(False)
+        self._motordir2 = GPIO("/dev/gpiochip2", 13, 'out')
+        self._motordir2.write(False)
+        self._motordir3 = GPIO("/dev/gpiochip2", 9, 'out')
+        self._motordir3.write(False)
+        # Init ROS Objects
         self._RATE = 10 # in HZ
         self._time_delta = 1./self._RATE
         rospy.Timer(rospy.Duration(self._time_delta), self.serial_loop)
+        # Debugging
+        self.count = 0
         rospy.spin()
 
     def serial_loop(self, event):
@@ -37,20 +62,35 @@ class PicoInterface:
         end1, end2, end3 = str(buf).split(',')
         rospy.logwarn(str(buf))
         rospy.logwarn(f"end1: {end1}, end2: {end2}, end3: {end3}")
+        self.count += 1
+        if self.count == 30:
+            self.change_dir()
         #rospy.logwarn("Hello World")
 
+    def change_dir(self):
+        self._motorcmd1.duty_cycle = 0.5
+        self._motorcmd2.duty_cycle = 0.5
+        self._motorcmd3.duty_cycle = 0.5
+        val = self._motordir1.read()
+        self._motordir1.write(not val)
+        self._motordir2.write(not val)
+        self._motordir3.write(not val)
+        self.count = 0
 
-#Activate 'pico_interface' Node
-def main():
-    """
-    Main execution loop for rc_interface
-    """
-    pico_interface = PicoInterface()
+    def close(self):
+        self._uart3.close()
+        self._motorcmd1.close()
+        self._motorcmd2.close()
+        self._motorcmd3.close()
+        self._motordir1.close()
+        self._motordir2.close()
+        self._motordir3.close()
+
 
 # Main Execution loop
 if __name__ == "__main__":
     try:
-        main()
+        pico_interface = PicoInterface()
     #If something kills this node, have it die
     except rospy.ROSInterruptException:
-        pass
+        pico_interface.close()
