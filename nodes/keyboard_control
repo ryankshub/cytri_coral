@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+# keyboard control
+# RKS
+
+# Keyboard interface for RC control. This node read user input and outputs a commanded velocity
+
+# Project imports
+
+# Python imports
+
+# 3rd-party imports
+from getkey import getkey, keys
+from geometry_msgs.msg import Twist
+import rospy
+
+class KeyboardControl:
+    """
+    ROS Node responsible for interacting with the user. Reads the key input from the
+    user and sets the commanded body velocity of the robot. 
+
+    PUBLISHERS: 
+       + body_twist geometry_msgs.Twist ~ commanded velocity from user
+    """
+    def __init__(self):
+        rospy.init_node("keyboard_control")
+        # Setup Help msg
+        self.help_msg = "Drive Cytri!!\n" + \
+                        "-------------\n" + \
+                        "Controls: \n" + \
+                        "  q   w   e\n" + \
+                        "  a   s   d\n" + \
+                        "           \n\n" + \
+                        "q:   increase turn speed left/decrease turn speed right\n" + \
+                        "e:   increase turn speed right/decrease turn speed left\n" + \
+                        "w/s: increase/decrease forward velocity\n" + \
+                        "a/d: increase side (left/right) velocity\n" + \
+                        "space: stop\n" + \
+                        "z: to exit\n\n"
+        # Init twist
+        self.twist = Twist()
+        self.twist.linear.x = 0
+        self.twist.linear.y = 0
+        self.twist.linear.z = 0
+        self.twist.angular.x = 0
+        self.twist.angular.y = 0
+        self.twist.angular.z = 0
+        # Publisher
+        self._pub = rospy.Publisher('body_vel', Twist, queue_size=10)
+        # Rate
+        self.RATE = 80 #Hz
+        self._time_delta = 1./self.RATE
+        rospy.Timer(rospy.Duration(self._time_delta), self.get_user_cmd)
+        # count
+        self.count = 0
+        self.LIMIT = 40
+        # Vel limits
+        self.XLIMIT = .2
+        self.YLIMIT = .2
+        self.RLIMIT = .2
+        # print help
+        print(self.help_msg)
+        rospy.spin()
+
+
+    def get_user_cmd(self, event):
+        """
+        Listen to user for cmd. Update commanded velocity based on input
+
+        Args:
+            event: A rospy.Timer event
+        """
+        valid_key = True
+        key = getkey()
+        if key == 'q':
+            self.twist.angular.z += 0.01
+        elif key == 'e':
+            self.twist.angular.z -= 0.01
+        elif key == 'w':
+            self.twist.linear.x += 0.01
+        elif key == 's':
+            self.twist.linear.x -= 0.01
+        elif key == 'a':
+            self.twist.linear.y += 0.01
+        elif key == 'd':
+            self.twist.linear.y -= 0.01
+        elif key == keys.SPACE:
+            self.twist.linear.x = 0
+            self.twist.linear.y = 0
+            self.twist.angular.z = 0
+        elif key == 'z':
+            rospy.signal_shutdown("User signaled exit")
+        else:
+            valid_key = False
+        
+        if(valid_key):
+            # Apply limit to velocity
+            if self.twist.linear.x > self.XLIMIT:
+                self.twist.linear.x = self.XLIMIT
+            elif self.twist.linear.x < -self.XLIMIT:
+                self.twist.linear.x = -self.XLIMIT
+
+            if self.twist.linear.y > self.YLIMIT:
+                self.twist.linear.y = self.YLIMIT
+            elif self.twist.linear.y < -self.YLIMIT:
+                self.twist.linear.y = -self.YLIMIT
+
+            if self.twist.angular.z > self.RLIMIT:
+                self.twist.angular.z = self.RLIMIT
+            elif self.twist.angular.z < -self.RLIMIT:
+                self.twist.angular.z = -self.RLIMIT
+
+            self.count += 1
+            if self.count == self.LIMIT:
+                print(self.help_msg)
+                self.count = 0
+            print(f"Cmd Vel:: X: {self.twist.linear.x:.2f}, Y: {self.twist.linear.y:.2f}, ROT: {self.twist.angular.z:.2f}")
+            self._pub.publish(self.twist)
+
+# Main execution loop
+if __name__ == "__main__":
+    try:
+        keyboard_control = KeyboardControl()
+    #If something kills this node, have it die
+    except rospy.ROSInterruptException:
+        pass
+        
+
