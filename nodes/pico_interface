@@ -59,9 +59,13 @@ class PicoInterface:
             event: A rospy.Timer event
         """
         buf = self._uart3.read(64,0.01)
-        end1, end2, end3 = str(buf).split(',')
+        try:
+            end1, end2, end3 = str(buf).split(',')
+        except:
+            end1, end2, end3 = (0,0,0)
         rospy.logwarn(str(buf))
         rospy.logwarn(f"end1: {end1}, end2: {end2}, end3: {end3}")
+        rospy.logwarn(f"pwn1: {self._motorcmd1.duty_cycle}, pwn2: {self._motorcmd2.duty_cycle}, pwm3: {self._motorcmd3.duty_cycle}")
         self.count += 1
         if self.count == 30:
             self.change_dir()
