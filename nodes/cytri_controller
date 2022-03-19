@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+# Controller
+# RKS
+
+# Controller for Cytri
+
+# Project imports
+from cytri_control_pkg.msg import Encoders, PWMS
+# Python imports
+
+# 3rd-party imports
+from geometry_msgs.msg import Twist
+import numpy as np
+import rospy
+
+class CytriController:
+    """
+    ROS Node responsible for translating commanded body twist to PWM wave. 
+    Uses a feedforward + feedback controller for some robustness
+
+    SUBSCRIBER:
+        + body_twist geometry_msgs.Twist ~ commanded velocity from user
+        + encoder_readings cytri_control_pkg.Encoders ~ encoder readings from motor
+
+    PUBLISHERS:
+        + command_pwms cytri_control_pkg.PWMS ~ commanded pwm waves for motors
+    """
+    def __init__(self):
+        rospy.init_node("cytri_controller")
+        # Get ros_params
+        self._wheel_radius = rospy.get_param("~cytri/wheel_radius")
+        self._body_dim = rospy.get_param("~cytri/body_dim")
+        # ROS Objects
+        self._body_twist_sub = rospy.Subscriber('body_vel', Twist, self.twist_listener)
+        self._encoder_sub = rospy.Subscriber('encoder_readings', Encoders, self.encoder_listener)
+        self._pwm_pub = rospy.Publisher('command_pwms', PWMS, queue_size=10)
+        # Constant
+        self._RAD_TO_COUNTS = 155.911365
+        # Placeholders
+        self._encode1 = 0
+        self._encode2 = 0
+        self._encode3 = 0
+        # Wheel vel(in encoder counts)
+        self._wheel1_counts = 0
+        self._wheel2_counts = 0
+        self._wheel3_counts = 0
+        # Controller params
+        self._feed_forward_divisor = 420
+        self._KP = 0.0001
+        # PWM
+        self._MAX_PWM = 0.9
+        # Rate
+        self.RATE = 200 #Hz
+        self._time_delta = 1./self.RATE
+        rospy.Timer(rospy.Duration(self._time_delta), self.control_loop)
+        # Spin
+        rospy.spin()
+
+    def twist_listener(self, twist_msg):
+        """
+        Given a body twist command, use inv kinematics to 
+        calculate wheel speed and convert the values to 
+        encoder units
+        """
+        # Parse msgs
+        x_dot = twist_msg.linear.x
+        y_dot = twist_msg.linear.y
+        theta_dot = twist_msg.angular.z
+        # Inverse kinematics
+        wheel1_rads, wheel2_rads, wheel3_rads = self.inv_kin(theta_dot, x_dot, y_dot)
+        # convert to encode count speed
+        self._wheel1_counts = wheel1_rads*self._RAD_TO_COUNTS
+        self._wheel2_counts = wheel2_rads*self._RAD_TO_COUNTS
+        self._wheel3_counts = wheel3_rads*self._RAD_TO_COUNTS
+
+    def encoder_listener(self, encoder_msg):
+        """
+        Grab encoder values
+        """
+        self._encode1 = encoder_msg.encoder1
+        self._encode2 = encoder_msg.encoder2
+        self._encode3 = encoder_msg.encoder3
+
+    def control_loop(self, event):
+        """
+        Feed Forward + P controller for wheel speed
+        """
+        # Do for each wheel speed
+        pwms = []
+        for target, current in zip([self._wheel1_counts, self._wheel2_counts, self._wheel3_counts],
+                                    [self._encode1, self._encode2, self._encode3]):
+            target_pwm = target/self._feed_forward_divisor
+            error_pwm = self._KP*(target - current)
+            pwm_sum = target_pwm + error_pwm
+            if (pwm_sum > self._MAX_PWM):
+                pwm_sum = self._MAX_PWM
+            elif (-pwm_sum < -self._MAX_PWM):
+                pwm_sum = -self._MAX_PWM
+            pwms.append(pwm_sum)
+        pwms_output = PWMS(pwm1=pwms[0], pwm2=pwms[1], pwm3=pwms[2])
+        self._pwm_pub(pwms_output)
+
+
+
+    def inv_kin(self, t_dot, x_dot, y_dot):
+        """
+        Compute the inv kinematics
+        """
+        wheel1_theta_comp = t_dot*self._body_dim*(np.sqrt(3.0)/2.0)
+        wheel1_x_comp = -x_dot/2.0
+        wheel1_y_comp = y_dot*(np.sqrt(3.0)/2.0)
+
+        wheel2_theta_comp = t_dot*self._body_dim*(np.sqrt(3.0)/2.0)
+        wheel2_x_comp = x_dot/2.0
+        wheel2_y_comp = y_dot*(np.sqrt(3.0)/2.0)
+
+        wheel3_theta_comp = t_dot*self._body_dim
+        wheel3_y_comp = -y_dot
+        # No x_comp for wheel3
+        wheel1 = (wheel1_theta_comp + wheel1_x_comp + wheel1_y_comp)/self._wheel_radius
+        wheel2 = (wheel2_theta_comp + wheel2_x_comp + wheel2_y_comp)/self._wheel_radius
+        wheel3 = (wheel3_theta_comp + wheel3_y_comp)/self._wheel_radius
+
+        return (wheel1, wheel2, wheel3)
+
+
+
+

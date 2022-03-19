@@ -5,7 +5,7 @@
 # This is responsible for reading encorder value and commanding PWM values to pico
 
 # Project imports
-
+from cytri_control_pkg.msg import Encoders, PWMS
 # Python imports
 
 # 3rd-party imports
@@ -17,6 +17,11 @@ class PicoInterface:
     ROS Node responsible for interacting with Raspberry pico. The node sets up a 
     serial connection to read encoder values from pico and pass them along to controller. 
     Controller should provide a set of wheel velocities that interface converts into pwms. 
+    SUBSCRIBER:
+        + command_pwms cytri_control_pkg.PWMS ~ commanded pwm waves for motors
+
+    PUBLISHERS:
+        + encoder_readings cytri_control_pkg.Encoders ~ encoder readings from motor
     """
     def __init__(self):
         rospy.init_node("pico_interface")
@@ -38,18 +43,58 @@ class PicoInterface:
         self._motorcmd3.enable()
         # Init direction pins
         self._motordir1 = GPIO("/dev/gpiochip4", 13, 'out')
-        self._motordir1.write(False)
+        self._motordir1.write(False) # False is counter-clockwise
         self._motordir2 = GPIO("/dev/gpiochip2", 13, 'out')
-        self._motordir2.write(False)
+        self._motordir2.write(False) # False is counter-clockwise
         self._motordir3 = GPIO("/dev/gpiochip2", 9, 'out')
-        self._motordir3.write(False)
+        self._motordir3.write(False) # False is counter-clockwise
         # Init ROS Objects
+        # ROS SUB/PUBS
+        self._pwm_sub = rospy.Subscriber('command_pwms', PWMS, self.pwm_parser)
+        self._encoder_pub = rospy.Publisher('encoder_readings', Encoders, queue_size=10)
+        # Rate objects
         self._RATE = 10 # in HZ
         self._time_delta = 1./self._RATE
         rospy.Timer(rospy.Duration(self._time_delta), self.serial_loop)
-        # Debugging
-        self.count = 0
+        # Local
+        self._PWM_EPSILON = 1e-4
         rospy.spin()
+
+    def zero_pwm(self, pwm):
+        if (abs(pwm) < self._PWM_EPSILON):
+            return 0.0
+        else:
+            return pwm
+
+    def pwm_parser(self, pwm_msg):
+        pwm1 = pwm_msg.pwm1
+        pwm2 = pwm_msg.pwm2
+        pwm3 = pwm_msg.pwm3
+
+        # PWM For Motor 1
+        pwm1 = self.zero_pwm(pwm1)
+        self._motorcmd1.duty_cycle = abs(pwm1)
+        if (pwm1 < 0):
+            self._motordir1.write(True)
+        else:
+            self._motordir1.write(False)
+
+        # PWM For Motor 2
+        pwm2 = self.zero_pwm(pwm2)
+        self._motorcmd2.duty_cycle = abs(pwm2)
+        if (pwm2 < 0):
+            self._motordir2.write(True)
+        else:
+            self._motordir2.write(False)
+
+        # PWM For Motor 3
+        pwm3 = self.zero_pwm(pwm3)
+        self._motorcmd3.duty_cycle = abs(pwm3)
+        if (pwm3 < 0):
+            self._motordir3.write(True)
+        else:
+            self._motordir3.write(False)
+
 
     def serial_loop(self, event):
         """
@@ -63,15 +108,15 @@ class PicoInterface:
             end1, end2, end3 = str(buf).split(',')
         except:
             end1, end2, end3 = (0,0,0)
-        #rospy.logwarn(str(buf))
-        #rospy.logwarn(f"end1: {end1}, end2: {end2}, end3: {end3}")
-        #rospy.logwarn(f"pwn1: {self._motorcmd1.duty_cycle}, pwn2: {self._motorcmd2.duty_cycle}, pwm3: {self._motorcmd3.duty_cycle}")
-        self.count += 1
-        if self.count == 30:
-            self.change_dir()
-        #rospy.logwarn("Hello World")
+        readings = Encoders(encorder1=int(end1), encorder2=int(end2), encorder3=int(end3))
+        self._encoder_pub(readings)
+
 
     def change_dir(self):
+        """
+        Changes the direction the wheels are spinning
+        Used for PWM debug dance
+        """
         self._motorcmd1.duty_cycle = 0.5
         self._motorcmd2.duty_cycle = 0.5
         self._motorcmd3.duty_cycle = 0.5
@@ -81,7 +126,11 @@ class PicoInterface:
         self._motordir3.write(not val)
         self.count = 0
 
+
     def close(self):
+        """
+        Closes all ports and commands 0.0 pwm
+        """
         self._uart3.close()
         self._motorcmd1.duty_cycle = 0.0
         self._motorcmd2.duty_cycle = 0.0
