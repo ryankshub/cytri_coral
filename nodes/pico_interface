@@ -106,9 +106,11 @@ class PicoInterface:
         buf = self._uart3.read(64,0.01)
         try:
             end1, end2, end3 = str(buf).split(',')
+            end1 = end1[2:]
+            end3 = end3[:-1]
         except:
             end1, end2, end3 = (0,0,0)
-        readings = Encoders(encorder1=int(end1), encorder2=int(end2), encorder3=int(end3))
+        readings = Encoders(encoder1=int(end1), encoder2=int(end2), encoder3=int(end3))
         self._encoder_pub.publish(readings)
 
 
