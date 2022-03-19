@@ -108,12 +108,12 @@ class CytriController:
         Compute the inv kinematics
         """
         wheel1_theta_comp = t_dot*self._body_dim
-        wheel1_x_comp = x_dot
-        wheel1_y_comp = y_dot/np.sqrt(3.0)
+        wheel1_x_comp = x_dot*(np.sqrt(3.0)/2.0)
+        wheel1_y_comp = y_dot/2.0
 
         wheel2_theta_comp = t_dot*self._body_dim
-        wheel2_x_comp = -x_dot
-        wheel2_y_comp = y_dot/np.sqrt(3.0)
+        wheel2_x_comp = -x_dot*(np.sqrt(3.0)/2.0)
+        wheel2_y_comp = y_dot/2.0
 
         wheel3_theta_comp = t_dot*self._body_dim
         wheel3_y_comp = -y_dot
