@@ -72,17 +72,17 @@ class KeyboardControl:
         valid_key = True
         key = getkey()
         if key == 'q':
-            self.twist.angular.z += 0.01
+            self.twist.angular.z += 0.05
         elif key == 'e':
-            self.twist.angular.z -= 0.01
+            self.twist.angular.z -= 0.05
         elif key == 'w':
-            self.twist.linear.x += 0.01
+            self.twist.linear.x += 0.05
         elif key == 's':
-            self.twist.linear.x -= 0.01
+            self.twist.linear.x -= 0.05
         elif key == 'a':
-            self.twist.linear.y += 0.01
+            self.twist.linear.y += 0.05
         elif key == 'd':
-            self.twist.linear.y -= 0.01
+            self.twist.linear.y -= 0.05
         elif key == keys.SPACE:
             self.twist.linear.x = 0
             self.twist.linear.y = 0
