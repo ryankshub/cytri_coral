@@ -47,7 +47,7 @@ class KeyboardControl:
         # Publisher
         self._pub = rospy.Publisher('body_vel', Twist, queue_size=10)
         # Rate
-        self.RATE = 80 #Hz
+        self.RATE = 100 #Hz
         self._time_delta = 1./self.RATE
         rospy.Timer(rospy.Duration(self._time_delta), self.get_user_cmd)
         # count

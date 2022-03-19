@@ -1,3 +1,4 @@
 <launch>
     <node name="pico_interface" pkg="cytri_control_pkg" type="pico_interface"/>
+    <node name="keyboard_control" pkg="cytri_control_pkg" type="keyboard_control" output="screen"/>
 </launch>

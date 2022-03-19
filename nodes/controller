@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# Controller
+# RKS
+
+# Controller for Cytri
+
+# Project imports
+from cytri_control_pkg.msg import Encoders
+# Python imports
+
+# 3rd-party imports
+from geometry_msgs.msg import Twist
+import rospy
+
+class CytriController:
+    """
+    ROS Node responsible for translating commanded body twist to PWM wave. 
+    Uses a feedforward + feedback controller for some robustness
+
+    SUBSCRIBER:
+        + body_twist geometry_msgs.Twist ~ commanded velocity from user
+        + encoder_readings cytri_control_pkg.Encoders ~ encoder readings from motor
+
+    PUBLISHERS:
+        + command_pwm cytri_control_pkg.PWMS ~ commanded pwm waves for motors
+    """
+    def __init__(self):
+        rospy.init_node("cytri_controller")
+        # Get ros_params
+        self._wheel_radius = rospy.get_param("~cytri/wheel_radius")
+        self._body_dim = rospy.get_param("~cytri/body_dim")
+        # ROS Objects
+        self._body_twist_sub = rospy.Subscriber('body_vel', Twist, self.twist_listener)
+        self._encoder_sub = rospy.Subscriber('encoder_readings', Encoders, self.encoder_listener)
+        # Placeholders
+        self._encode1 = 0
+        self._encode2 = 0
+        self._encode3 = 0
+        # Rate
+        self.RATE = 500 #Hz
+        self._time_delta = 1./self.RATE
+        rospy.Timer(rospy.Duration(self._time_delta), self.control_loop)
+
+    def twist_listener(self, twist_msg):
+        pass
+        # Do Inv Kinematics
+
+    def encoder_listener(self, encoder_msg):
+        self._encode1 = encoder_msg.encoder1
+        self._encode2 = encoder_msg.encoder2
+        self._encode3 = encoder_msg.encoder3
+
+    def control_loop(self, event):
+        pass
+
+
+
