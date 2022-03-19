@@ -98,7 +98,7 @@ class CytriController:
                 pwm_sum = -self._MAX_PWM
             pwms.append(pwm_sum)
         pwms_output = PWMS(pwm1=pwms[0], pwm2=pwms[1], pwm3=pwms[2])
-        self._pwm_pub(pwms_output)
+        self._pwm_pub.publish(pwms_output)
 
 
 
@@ -106,11 +106,11 @@ class CytriController:
         """
         Compute the inv kinematics
         """
-        wheel1_theta_comp = t_dot*self._body_dim*(np.sqrt(3.0)/2.0)
+        wheel1_theta_comp = t_dot*self._body_dim
         wheel1_x_comp = -x_dot/2.0
         wheel1_y_comp = y_dot*(np.sqrt(3.0)/2.0)
 
-        wheel2_theta_comp = t_dot*self._body_dim*(np.sqrt(3.0)/2.0)
+        wheel2_theta_comp = t_dot*self._body_dim
         wheel2_x_comp = x_dot/2.0
         wheel2_y_comp = y_dot*(np.sqrt(3.0)/2.0)
 
@@ -124,5 +124,10 @@ class CytriController:
         return (wheel1, wheel2, wheel3)
 
 
-
-
+# Main Execution loop
+if __name__ == "__main__":
+    try:
+        cytri_controller = CytriController()
+    #If something kills this node, have it die
+    except rospy.ROSInterruptException:
+        pass

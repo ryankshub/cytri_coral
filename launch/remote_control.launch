@@ -1,4 +1,7 @@
 <launch>
     <node name="pico_interface" pkg="cytri_control_pkg" type="pico_interface"/>
-    <node name="keyboard_control" pkg="cytri_control_pkg" type="keyboard_control" output="screen"/>
+    <node name="cytri_controller" pkg="cytri_control_pkg" type="cytri_controller">
+        <rosparam command="load" file="$(find cytri_control_pkg)/config/robot_params.yaml"/>
+    </node>
+    <node name="keyboard_control" pkg="cytri_control_pkg" type="keyboard_control" output="screen" required="true"/>
 </launch>

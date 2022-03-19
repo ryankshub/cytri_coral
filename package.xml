@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>cytri_control_pkg</name>
-  <version>0.0.0</version>
-  <description>Cytri Code for Google Coral</description>
+  <version>0.0.1</version>
+  <description>Coral code for remote control with cytri robot</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -49,6 +49,15 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <build_depend>message_runtime</build_depend>
+  <build_depend>std_msgs</build_depend>
+
+  <build_export_depend>std_msgs</build_export_depend>
+
+  <exec_depend>message_runtime</exec_depend>
+
   <depend>rospy</depend>
 
   <!-- The export tag contains other, unspecified, tags -->

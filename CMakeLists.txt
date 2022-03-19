@@ -51,6 +51,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Encoders.msg
+  PWMS.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -105,7 +106,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES cytri_control_pkg
-#  CATKIN_DEPENDS other_catkin_pkg
+   CATKIN_DEPENDS message_runtime std_msgs
 #  DEPENDS system_lib
 )
 
@@ -162,6 +163,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   nodes/pico_interface
   nodes/keyboard_control
+  nodes/cytri_controller
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

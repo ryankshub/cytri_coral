@@ -1,0 +1,4 @@
+#Yaml file for robot infomation
+cytri:
+  wheel_radius: 0.03 # 30 mm
+  body_dim: .169333 # 169.333
