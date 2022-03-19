@@ -91,11 +91,12 @@ class CytriController:
                                     [self._encode1, self._encode2, self._encode3]):
             target_pwm = target/self._feed_forward_divisor
             error_pwm = self._KP*(target - current)
-            pwm_sum = target_pwm + error_pwm
-            if (pwm_sum > self._MAX_PWM):
-                pwm_sum = self._MAX_PWM
-            elif (-pwm_sum < -self._MAX_PWM):
-                pwm_sum = -self._MAX_PWM
+            pwm_sum = target_pwm + error_pwm            
+            if (abs(pwm_sum) > self._MAX_PWM):
+                if (pwm_sum < 0):
+                    pwm_sum = -self._MAX_PWM
+                else:
+                    pwm_sum = self._MAX_PWM
             pwms.append(pwm_sum)
         pwms_output = PWMS(pwm1=pwms[0], pwm2=pwms[1], pwm3=pwms[2])
         self._pwm_pub.publish(pwms_output)
