@@ -1,4 +1,4 @@
 # Encoder reading 
-float64 encoder1 # Reading from motor one
-float64 encoder2 # Reading from motor two
-float64 encoder3 # Reading from motor three
+int32 encoder1 # Reading from motor one
+int32 encoder2 # Reading from motor two
+int32 encoder3 # Reading from motor three
