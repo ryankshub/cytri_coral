@@ -4,6 +4,7 @@ Author and Maintainer: **Ryan King-Shepard**
 
 ## **Demo**
 
+https://user-images.githubusercontent.com/90436131/160480278-bdf5ab26-59d5-4d8a-a8eb-860ac3d3aa51.mp4
 
 ## **Description**
 ROS package for RC control of a three wheeled robot over wifi with Google Coral
